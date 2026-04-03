@@ -227,24 +227,45 @@ header p {
 
 @media (max-width: 768px) {
   .app-container {
-    padding: 15px;
+    padding: 10px;
+    max-width: 320px; /* Constrain horizontal width to force components to tightly hug */
   }
   .app-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  .tracker {
+    margin-bottom: 10px;
+  }
+  .tracker h2 {
+    font-size: 1rem;
+    margin-bottom: 5px;
+  }
+  .progress-bar {
+    height: 18px;
+  }
+  .action-btn {
+    font-size: 0.85rem;
+    padding: 10px 15px;
+  }
+  .hint-btn {
+    font-size: 0.8rem;
+    padding: 8px 15px;
+    margin-bottom: 10px;
   }
   .win-btn {
-    font-size: 1rem;
-    padding: 15px 25px;
+    font-size: 0.9rem;
+    padding: 12px 20px;
   }
   .modal-content {
-    padding: 25px;
+    padding: 20px;
     border-width: 2px;
   }
   .modal-content h2 {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
   .modal-content p {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 }
 
