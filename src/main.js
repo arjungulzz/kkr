@@ -142,10 +142,8 @@ winBtn.addEventListener('mouseover', () => {
 
 winBtn.addEventListener('touchstart', (e) => {
   if (isEscaping) {
-    e.preventDefault();
-    if (hasJumped) {
-      moveButton();
-    }
+    e.preventDefault(); // Prevents ghost clicks
+    moveButton(); // Immediately launch dodge sequence on tap
   }
 });
 
