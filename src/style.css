@@ -233,24 +233,24 @@ header p {
   .app-container.playing-mobile {
     padding: 8px 10px;
   }
-  .app-container.playing-mobile .app-header {
+  .app-container.playing-mobile header {
     display: none;
   }
-  .app-container.playing-mobile .tracker {
+  .app-container.playing-mobile .tracker-section {
     margin-bottom: 8px;
   }
-  .app-header h1 {
+  header h1 {
     font-size: 1.2rem;
     margin-bottom: 10px;
   }
-  .tracker {
+  .tracker-section {
     margin-bottom: 10px;
   }
-  .tracker h2 {
+  .tracker-section h2 {
     font-size: 1rem;
     margin-bottom: 5px;
   }
-  .progress-bar {
+  .tracker-bar {
     height: 18px;
   }
   .action-btn {
