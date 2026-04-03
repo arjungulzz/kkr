@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KKR Cup Winner 2024</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Background overlay -->
+    <div class="overlay"></div>
+
+    <div class="app-container">
+      <header>
+        <h1>Ami KKR: Path to Glory</h1>
+        <p>Your team needs a drastic overhaul to win the cup!</p>
+      </header>
+
+      <section class="tracker-section">
+        <div class="tracker-header">
+          <h2>Win Probability</h2>
+          <span id="probability-text">0%</span>
+        </div>
+        <div class="tracker-bar">
+          <div id="tracker-fill" class="tracker-fill"></div>
+        </div>
+      </section>
+
+      <div class="actions-control">
+        <button id="spawn-actions-btn" class="spawn-btn">Not able to win it? Take action.</button>
+        <button id="hint-btn" class="hint-btn hidden">Take Hint</button>
+      </div>
+
+      <button id="win-btn" class="win-btn" disabled>🏆 WIN THE IPL 2026</button>
+    </div>
+
+    <!-- Chips Container -->
+    <div id="chips-container" class="chips-container"></div>
+
+    <!-- Win Modal (Hidden by default) -->
+    <div id="win-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>🎉 KORBO LORBO JEETBO RE! 🎉</h2>
+        <p>WE WON THE CUP!</p>
+        <button id="restart-btn" class="restart-btn">Play Again</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

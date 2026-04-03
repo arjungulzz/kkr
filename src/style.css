@@ -1,0 +1,364 @@
+:root {
+  --kkr-purple: #3a225d;
+  --kkr-purple-dark: #1e1133;
+  --kkr-gold: #b3a123;
+  --kkr-gold-bright: #ebd532;
+  --text-light: #ffffff;
+  --text-dark: #222;
+  
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  color: var(--text-light);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-image: url('/eden-gardens-bg.png'); /* from the generated image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(30, 17, 51, 0.4) 0%, rgba(58, 34, 93, 0.8) 100%);
+  backdrop-filter: blur(4px);
+  z-index: 1;
+}
+
+.app-container {
+  position: relative;
+  z-index: 2;
+  background: rgba(30, 17, 51, 0.85); /* Dark purple glassmorphism */
+  border: 2px solid var(--kkr-gold);
+  border-radius: 20px;
+  padding: 25px;
+  max-width: 450px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(179, 161, 35, 0.2);
+}
+
+header h1 {
+  font-weight: 800;
+  color: var(--kkr-gold-bright);
+  font-size: 2.5rem;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 6px rgba(0,0,0,0.5);
+}
+
+header p {
+  color: #ddd;
+  font-size: 1.2rem;
+  margin-top: 0;
+  margin-bottom: 30px;
+}
+
+.tracker-section {
+  margin-bottom: 40px;
+}
+
+.tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--kkr-gold);
+}
+
+.tracker-bar {
+  width: 100%;
+  height: 25px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.tracker-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--kkr-gold), var(--kkr-gold-bright));
+  transition: width 0.5s ease-out;
+  border-radius: 20px;
+  box-shadow: 0 0 15px var(--kkr-gold);
+}
+
+.actions-control {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  z-index: 50; 
+}
+
+.spawn-btn {
+  background: var(--kkr-purple-dark);
+  color: white;
+  border: 2px solid var(--kkr-gold);
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+.spawn-btn.hidden-initial {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.spawn-btn.glow-pulse {
+  animation: spawnGlow 1.5s infinite;
+  box-shadow: 0 0 15px rgba(235, 213, 50, 0.8);
+}
+
+@keyframes spawnGlow {
+  0% { box-shadow: 0 0 0 0 rgba(235, 213, 50, 0.8); border-color: var(--kkr-gold-bright); }
+  70% { box-shadow: 0 0 0 25px rgba(235, 213, 50, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(235, 213, 50, 0); border-color: var(--kkr-gold); }
+}
+
+.spawn-btn:hover:not(:disabled) {
+  background: var(--kkr-gold);
+  color: var(--kkr-purple-dark);
+}
+
+.spawn-btn:disabled {
+  background: var(--kkr-purple);
+  color: #ccc;
+  cursor: default;
+  border-color: #555;
+}
+
+.hint-btn {
+  background: #ff5722;
+  color: white;
+  border: 2px solid #fff;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(255, 87, 34, 0.6);
+}
+
+.hint-btn:hover {
+  background: #ff784e;
+  transform: scale(1.05);
+}
+
+.hint-btn.hidden {
+  display: none;
+}
+
+.chips-container {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.chip {
+  position: absolute;
+  background: rgba(30, 17, 51, 0.98);
+  color: var(--kkr-gold);
+  border: 2px solid var(--kkr-gold);
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: left 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.2s, opacity 0.3s, background 0.3s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+  transform: translate(-50%, -50%) scale(1);
+  
+  /* Strict dimensions ensure identical rects across all grid positions guaranteeing 0 overlap */
+  width: 130px;
+  height: 45px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.chip:hover:not(.disabled) {
+  transform: translate(-50%, -50%) scale(1.15);
+  background: var(--kkr-gold);
+  color: var(--kkr-purple-dark);
+  z-index: 60;
+}
+
+.chip.mobile {
+  width: 70px;
+  height: 35px;
+  font-size: 0.6rem;
+  border-radius: 6px;
+  border-width: 1px;
+  padding: 3px;
+  line-height: 1.1;
+}
+
+.golden-chip.mobile {
+  width: 140px; /* Golden chip needs double width to render "Rinku Singh" text unbroken */
+  font-size: 0.7rem;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 15px;
+  }
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
+  .win-btn {
+    font-size: 1rem;
+    padding: 15px 25px;
+  }
+  .modal-content {
+    padding: 25px;
+    border-width: 2px;
+  }
+  .modal-content h2 {
+    font-size: 2rem;
+  }
+  .modal-content p {
+    font-size: 1.2rem;
+  }
+}
+
+.chip.selected {
+  opacity: 0.7;
+  background: rgba(179, 161, 35, 0.2);
+  border-color: rgba(179, 161, 35, 0.5);
+  color: #fff;
+  transform: translate(-50%, -50%) scale(0.95);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+
+.chip.highlight {
+  animation: pulseGold 1s infinite;
+  z-index: 70;
+}
+
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 0 0 rgba(235, 213, 50, 0.8); border-color: var(--kkr-gold-bright); }
+  70% { box-shadow: 0 0 0 20px rgba(235, 213, 50, 0); background: var(--kkr-purple); color: var(--text-light); }
+  100% { box-shadow: 0 0 0 0 rgba(235, 213, 50, 0); border-color: var(--kkr-gold); }
+}
+
+.win-btn {
+  /* This is the runaway target button */
+  background: linear-gradient(45deg, #e52d27, #b31217); /* red distinct color initially to pop out */
+  color: white;
+  border: none;
+  padding: 20px 40px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 8px 15px rgba(229, 45, 39, 0.4);
+  transition: left 0.4s cubic-bezier(0.25, 1, 0.5, 1), top 0.4s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, transform 0.2s ease;
+  position: relative; /* Before it escapes */
+}
+
+/* When the probability is low it will be absolute so it can run out of the box */
+.win-btn.escaping {
+  position: fixed;
+  z-index: 100;
+}
+
+.win-btn:disabled {
+  background: #555;
+  color: #888;
+  box-shadow: none;
+  cursor: grab;
+}
+
+/* Modal Styling */
+.modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.modal.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, var(--kkr-purple-dark), var(--kkr-purple));
+  padding: 50px;
+  border-radius: 20px;
+  text-align: center;
+  border: 4px solid var(--kkr-gold-bright);
+  box-shadow: 0 0 50px var(--kkr-gold);
+  transform: scale(1);
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.modal-content h2 {
+  color: var(--kkr-gold-bright);
+  font-size: 3rem;
+  margin: 0;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.modal-content p {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.restart-btn {
+  margin-top: 30px;
+  background: var(--kkr-gold);
+  color: var(--kkr-purple-dark);
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.restart-btn:hover {
+  transform: scale(1.05);
+  background: var(--kkr-gold-bright);
+}
