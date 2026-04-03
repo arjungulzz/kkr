@@ -166,11 +166,17 @@ spawnBtn.addEventListener('click', () => {
   const allTexts = [...rightPathChips, ...decoyChips];
   allTexts.sort(() => Math.random() - 0.5);
 
-  const centerBox = document.querySelector('.app-container').getBoundingClientRect();
+  const isMobile = window.innerWidth <= 768;
+  const appContainer = document.querySelector('.app-container');
+  if (isMobile) {
+    appContainer.classList.add('playing-mobile');
+  }
+
+  // Must calculate bounds specifically AFTER DOM reflows the compacted state
+  const centerBox = appContainer.getBoundingClientRect();
   const spawnRect = spawnBtn.getBoundingClientRect();
   const startX = spawnRect.left + spawnRect.width / 2;
   const startY = spawnRect.top + spawnRect.height / 2;
-  const isMobile = window.innerWidth <= 768;
 
   // Render Golden Chip specifically below the center box, hidden completely
   goldenChipElement = document.createElement('div');
@@ -207,19 +213,20 @@ spawnBtn.addEventListener('click', () => {
       startX_m + 4 * (chipW_m + gap_m)
     ];
     
-    // Y Offsets: Safely bounding inwards to prevent bottom/top clipping
-    const startTopY_m = centerBox.top - 10 - chipH_m/2;
-    const startBottomY_m = centerBox.bottom + 65 + chipH_m/2; // Safe clearing for scaled golden chip
+    // Y Offsets: Hardcode strictly against the Viewport extreme borders, completely detaching from the internal CenterBox Flex layout
+    const startTopY_m = 10 + chipH_m/2; 
+    const startBottomY_m = window.innerHeight - 10 - chipH_m/2; 
     
-    for(let i=0; i<15; i++) { // Stack top 15 propagating aggressively upwards (3 rows of 5)
+    for(let i=0; i<15; i++) { // Stack top 15 cleanly cascading strictly DOWNWARDS
       const row = Math.floor(i / 5);
       const col = i % 5;
-      positions.push({ x: colsX_m[col], y: startTopY_m - (row * (chipH_m + gap_m)) });
+      positions.push({ x: colsX_m[col], y: startTopY_m + (row * (chipH_m + gap_m)) });
     }
-    for(let i=0; i<15; i++) { // Stack bottom 15 pushing cleanly downwards (3 rows of 5)
+    for(let i=0; i<15; i++) { // Stack bottom 15 cleanly cascading rigidly UPWARDS
       const row = Math.floor(i / 5);
       const col = i % 5;
-      positions.push({ x: colsX_m[col], y: startBottomY_m + (row * (chipH_m + gap_m)) });
+      // Reverse deduction limits off-screen bottom bloat entirely 
+      positions.push({ x: colsX_m[col], y: startBottomY_m - (row * (chipH_m + gap_m)) });
     }
   } else {
     // Strict 4-column layout (2 left, 2 right) explicitly guaranteeing zero overlaps for Desktop
@@ -369,6 +376,8 @@ restartBtn.addEventListener('click', () => {
   correctCount = 0;
   decoySum = 0;
   hasJumped = false;
+
+  document.querySelector('.app-container').classList.remove('playing-mobile');
 
   stopConfetti = true;
   if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);

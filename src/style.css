@@ -228,7 +228,16 @@ header p {
 @media (max-width: 768px) {
   .app-container {
     padding: 10px;
-    max-width: 320px; /* Constrain horizontal width to force components to tightly hug */
+    max-width: 320px;
+  }
+  .app-container.playing-mobile {
+    padding: 8px 10px;
+  }
+  .app-container.playing-mobile .app-header {
+    display: none;
+  }
+  .app-container.playing-mobile .tracker {
+    margin-bottom: 8px;
   }
   .app-header h1 {
     font-size: 1.2rem;
