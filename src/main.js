@@ -13,15 +13,17 @@ const restartBtn = document.getElementById('restart-btn');
 
 const spawnBtn = document.getElementById('spawn-actions-btn');
 const hintBtn = document.getElementById('hint-btn');
-const chipsContainer = document.getElementById('chips-container');
+const deckContainer = document.getElementById('deck-container');
+const slotsDock = document.getElementById('slots-dock');
+const slots = document.querySelectorAll('.slot');
 
 // State flags
 let isEscaping = true;
-let goldenChipElement = null;
-let chipsShown = false;
-let correctCount = 0;
-let decoySum = 0;
 let hasJumped = false;
+let chipsShown = false;
+let cardDeck = [];
+let equippedSlots = [null, null, null, null, null];
+let decoyVals = [0, 0, 0, 0, 0];
 
 const rightPathChips = [
   "Sack Coach", "Promote Narine", "Use data analytics", "Sign a spinner", "Focus on fielding"
@@ -172,178 +174,182 @@ spawnBtn.addEventListener('click', () => {
     appContainer.classList.add('playing-mobile');
   }
 
-  // Must calculate bounds specifically AFTER DOM reflows the compacted state
-  const centerBox = appContainer.getBoundingClientRect();
-  const spawnRect = spawnBtn.getBoundingClientRect();
-  const startX = spawnRect.left + spawnRect.width / 2;
-  const startY = spawnRect.top + spawnRect.height / 2;
+  // Engage Tinder Framework Views
+  deckContainer.classList.remove('hidden');
+  slotsDock.classList.remove('hidden');
 
-  // Render Golden Chip specifically below the center box, hidden completely
-  goldenChipElement = document.createElement('div');
-  goldenChipElement.classList.add('chip', 'golden-chip');
-  if (isMobile) goldenChipElement.classList.add('mobile');
-  goldenChipElement.innerText = goldenChipText;
-  goldenChipElement.style.opacity = '0';
-  goldenChipElement.style.pointerEvents = 'none';
-  goldenChipElement.style.left = `${centerBox.left + centerBox.width / 2}px`;
-  goldenChipElement.style.top = `${centerBox.bottom + 15}px`; // hugged smoothly under the container
+  cardDeck = [...rightPathChips, ...decoyChips];
+  cardDeck.sort(() => Math.random() - 0.5);
 
-  goldenChipElement.addEventListener('click', () => {
-    goldenChipElement.classList.add('selected');
-    isEscaping = false;
-    updateTrackerForSelection(100);
-  });
-  chipsContainer.appendChild(goldenChipElement);
+  drawNextCard();
+});
 
-  // Calculate strict layout globally resolving 0 overlap
-  let positions = [];
+function calculateProbability() {
+  let correctHits = 0;
+  let decoySumTotal = 0;
+  let totalEquipped = 0;
   
-  if (isMobile) {
-    // Ultra-dense 5-column Mobile Matrix folded securely across Top and Bottom to completely avoid Viewport Vertical Overflow
-    const chipW_m = 70; 
-    const chipH_m = 35;
-    const gap_m = 4;
-    const matrixW = 5 * chipW_m + 4 * gap_m;
-    const startX_m = (window.innerWidth - matrixW) / 2 + chipW_m / 2;
-    const colsX_m = [
-      startX_m, 
-      startX_m + chipW_m + gap_m, 
-      startX_m + 2 * (chipW_m + gap_m),
-      startX_m + 3 * (chipW_m + gap_m),
-      startX_m + 4 * (chipW_m + gap_m)
-    ];
-    
-    // Y Offsets: Hardcode strictly against the Viewport extreme borders, completely detaching from the internal CenterBox Flex layout
-    const startTopY_m = 10 + chipH_m/2; 
-    const startBottomY_m = window.innerHeight - 10 - chipH_m/2; 
-    
-    for(let i=0; i<15; i++) { // Stack top 15 cleanly cascading strictly DOWNWARDS
-      const row = Math.floor(i / 5);
-      const col = i % 5;
-      positions.push({ x: colsX_m[col], y: startTopY_m + (row * (chipH_m + gap_m)) });
-    }
-    for(let i=0; i<15; i++) { // Stack bottom 15 cleanly cascading rigidly UPWARDS
-      const row = Math.floor(i / 5);
-      const col = i % 5;
-      // Reverse deduction limits off-screen bottom bloat entirely 
-      positions.push({ x: colsX_m[col], y: startBottomY_m - (row * (chipH_m + gap_m)) });
-    }
-  } else {
-    // Strict 4-column layout (2 left, 2 right) explicitly guaranteeing zero overlaps for Desktop
-    const chipW = 130; 
-    const chipH = 45;  
-    const gapX = 15;
-    const gapY = 15;
-    
-    const colCentersX = [
-      centerBox.left - chipW - gapX * 2 - chipW / 2,
-      centerBox.left - chipW / 2 - gapX,
-      centerBox.right + chipW / 2 + gapX,
-      centerBox.right + chipW + gapX * 2 + chipW / 2
-    ];
-    
-    const colCounts = [8, 7, 7, 8]; 
-    
-    for (let c = 0; c < 4; c++) {
-      let rows = colCounts[c];
-      let totalH = rows * chipH + (rows - 1) * gapY;
-      let startY = (window.innerHeight / 2) - (totalH / 2);
-  
-      for (let r = 0; r < rows; r++) {
-        let alignY = startY + r * (chipH + gapY) + chipH / 2;
-        positions.push({ x: colCentersX[c], y: alignY });
+  equippedSlots.forEach((text, i) => {
+    if(text) {
+      totalEquipped++;
+      if (rightPathChips.includes(text)) {
+        correctHits++;
+      } else {
+        decoySumTotal += decoyVals[i];
       }
     }
+  });
+
+  winProbability = (correctHits * 18) + decoySumTotal;
+  if (winProbability < 0) winProbability = 0;
+  
+  if (totalEquipped < MAX_CLICKS && winProbability > 89) {
+    winProbability = 89;
+  } else if (totalEquipped === MAX_CLICKS && correctHits === 5) {
+      winProbability = 90;
+  } else if (totalEquipped === MAX_CLICKS) {
+      winProbability = Math.min(89, winProbability);
   }
 
-  // Shuffle positions so random chips go to random strict slots
-  positions.sort(() => Math.random() - 0.5);
+  updateTrackerForSelection(winProbability);
+  clickCount = totalEquipped;
+  
+  if (totalEquipped === MAX_CLICKS && winProbability < 90) {
+    spawnBtn.innerText = "Deck locked. Eject a slot to draw more.";
+  } else if (totalEquipped === MAX_CLICKS) {
+    spawnBtn.innerText = "Puzzle solved! Take the hint if needed.";
+  } else {
+    spawnBtn.innerText = `Select best options (${clickCount}/${MAX_CLICKS})`;
+  }
+}
 
-  allTexts.forEach((text, i) => {
-    const chip = document.createElement('div');
-    chip.classList.add('chip');
-    if (isMobile) chip.classList.add('mobile');
-    chip.innerText = text;
+function ejectSlot(index) {
+  const text = equippedSlots[index];
+  if (!text) return;
+  
+  // Revert Slot logic
+  equippedSlots[index] = null;
+  decoyVals[index] = 0;
+  slots[index].innerText = '';
+  slots[index].classList.remove('filled');
+  
+  // Only push back into deck if we don't already have it (safety mechanic)
+  if(!cardDeck.includes(text)) {
+      cardDeck.push(text);
+      cardDeck.sort(() => Math.random() - 0.5);
+  }
+  
+  calculateProbability();
+  
+  // If the deck layout was empty because slots were full, immediately pop the next card!
+  if(deckContainer.children.length === 0) {
+      drawNextCard();
+  }
+}
 
-    chip.style.left = `${startX}px`;
-    chip.style.top = `${startY}px`;
-
-    chip.addEventListener('click', () => {
-      // Logic for selectable/unselectable toggling
-      if (!chip.classList.contains('selected')) {
-        // Enforce max click
-        if (clickCount >= MAX_CLICKS) return;
-
-        chip.classList.add('selected');
-        clickCount++;
-
-        if (rightPathChips.includes(text)) {
-          correctCount++;
-        } else {
-          // Generate a more visible random fluctuation between -5% and +20%
-          const fluct = Math.floor(Math.random() * 26) - 5;
-          chip.dataset.probVal = fluct;
-          decoySum += fluct;
-        }
-      } else {
-        // Revert selection
-        chip.classList.remove('selected');
-        clickCount--;
-
-        if (rightPathChips.includes(text)) {
-          correctCount--;
-        } else {
-          decoySum -= parseInt(chip.dataset.probVal, 10);
-        }
-      }
-
-      // Calculate dynamic probability securely insulated from edge cases
-      winProbability = correctCount * 18 + decoySum;
-      if (winProbability < 0) winProbability = 0;
-
-      // CRITICAL LOGIC CAP: Never exceed 89% under any random decoy formulation
-      if (correctCount < MAX_CLICKS && winProbability > 89) {
-        winProbability = 89;
-      } else if (correctCount === MAX_CLICKS) {
-        winProbability = 90; // Strictly ensure exact 90 lock
-      }
-
-      updateTrackerForSelection(winProbability);
-
-      // Update main button instructional text
-      if (clickCount === MAX_CLICKS && winProbability < 90) {
-        spawnBtn.innerText = "Max picks reached. Unselect a chip or Restart.";
-      } else if (clickCount === MAX_CLICKS) {
-        spawnBtn.innerText = "You solved the puzzle!";
-      } else {
-        spawnBtn.innerText = `Select best options (${clickCount}/${MAX_CLICKS})`;
-      }
-    });
-
-    chipsContainer.appendChild(chip);
-
-    let targetX, targetY;
-    if (i < positions.length) {
-      targetX = positions[i].x + (Math.random() - 0.5) * 6;
-      targetY = positions[i].y + (Math.random() - 0.5) * 6;
-    } else {
-      targetX = Math.max(50, Math.floor(Math.random() * (window.innerWidth - 100)));
-      targetY = Math.max(50, Math.floor(Math.random() * (window.innerHeight - 50)));
-    }
-
-    setTimeout(() => {
-      chip.style.left = `${targetX}px`;
-      chip.style.top = `${targetY}px`;
-    }, 10 * i + 10);
+slots.forEach((slot, idx) => {
+  slot.addEventListener('click', () => {
+    ejectSlot(idx);
   });
 });
 
+function drawNextCard() {
+  deckContainer.innerHTML = '';
+  if (cardDeck.length === 0) return;
+  if (clickCount >= MAX_CLICKS) return; 
+  
+  const text = cardDeck.shift(); // Pull from the top
+  const card = document.createElement('div');
+  card.classList.add('swipe-card');
+  card.innerText = text;
+  
+  if (text === goldenChipText) {
+    card.classList.add('golden-card');
+  }
+  
+  deckContainer.appendChild(card);
+  
+  let isDragging = false;
+  let startX = 0;
+  let currentX = 0;
+  
+  // Native absolute pointer tracking securely merges Mouse/Touch
+  card.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    card.classList.add('dragging');
+    card.setPointerCapture(e.pointerId);
+  });
+  
+  card.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    currentX = e.clientX - startX;
+    let rotate = currentX * 0.05; 
+    card.style.transform = `translate(${currentX}px, 0) rotate(${rotate}deg)`;
+  });
+  
+  card.addEventListener('pointerup', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    card.classList.remove('dragging');
+    card.releasePointerCapture(e.pointerId);
+    
+    // Evaluate physics vectors
+    if (currentX > 80) { // Equip Threshold
+      card.style.opacity = '0'; // instantly dissolve visually
+      equipCard(text);
+    } else if (currentX < -80) { // Discard Threshold
+      card.style.opacity = '0';
+      discardCard(text);
+    } else { // Snap logic
+      card.style.transform = `translate(0px, 0) rotate(0deg)`;
+    }
+  });
+  
+  card.addEventListener('pointercancel', () => {
+      isDragging = false;
+      card.classList.remove('dragging');
+      card.style.transform = `translate(0px, 0) rotate(0deg)`;
+  });
+}
+
+function equipCard(text) {
+  let slotIdx = equippedSlots.indexOf(null);
+  if (slotIdx === -1) {
+    discardCard(text); // Safety belt
+    return;
+  }
+  
+  if (text === goldenChipText) {
+     isEscaping = false;
+     updateTrackerForSelection(100);
+     deckContainer.innerHTML = ''; // wipe clear
+     return;
+  }
+  
+  equippedSlots[slotIdx] = text;
+  if (!rightPathChips.includes(text)) {
+    decoyVals[slotIdx] = Math.floor(Math.random() * 26) - 5;
+  }
+  
+  slots[slotIdx].innerText = text;
+  slots[slotIdx].classList.add('filled');
+  
+  calculateProbability();
+  setTimeout(drawNextCard, 100);
+}
+
+function discardCard(text) {
+   cardDeck.push(text);
+   setTimeout(drawNextCard, 100);
+}
+
+// Map the Hint precisely to the deck injection physics
 hintBtn.addEventListener('click', () => {
-  if (goldenChipElement && isEscaping) {
-    goldenChipElement.style.opacity = '1';
-    goldenChipElement.style.pointerEvents = 'auto'; // allow clicking explicitly now
-    goldenChipElement.classList.add('highlight');
-    hintBtn.innerText = "Click the glowing chip!";
+  if (isEscaping) {
+    hintBtn.innerText = "Check your deck!!";
+    cardDeck.unshift(goldenChipText); // Inject directly into front slot!
+    if(deckContainer.children.length === 0) drawNextCard();
   }
 });
 
@@ -368,14 +374,14 @@ function triggerConfetti() {
 }
 
 restartBtn.addEventListener('click', () => {
-  winProbability = 0;
-  clickCount = 0;
-  isEscaping = true;
-  goldenChipElement = null;
-  chipsShown = false;
-  correctCount = 0;
-  decoySum = 0;
-  hasJumped = false;
+  cardDeck = [];
+  equippedSlots = [null, null, null, null, null];
+  decoyVals = [0, 0, 0, 0, 0];
+  
+  slots.forEach((s) => {
+      s.innerText = '';
+      s.classList.remove('filled');
+  });
 
   document.querySelector('.app-container').classList.remove('playing-mobile');
 
@@ -385,7 +391,9 @@ restartBtn.addEventListener('click', () => {
 
   updateTrackerForSelection(0);
 
-  chipsContainer.innerHTML = '';
+  deckContainer.innerHTML = '';
+  deckContainer.classList.add('hidden');
+  slotsDock.classList.add('hidden');
   spawnBtn.removeAttribute('disabled');
   spawnBtn.innerText = "Not able to win it? Take action.";
   spawnBtn.classList.add('hidden-initial');

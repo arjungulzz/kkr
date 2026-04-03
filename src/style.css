@@ -253,14 +253,21 @@ header p {
   .tracker-bar {
     height: 18px;
   }
-  .action-btn {
-    font-size: 0.85rem;
-    padding: 10px 15px;
+  .deck-container {
+    top: 55%;
+    width: 220px;
+    height: 160px;
   }
-  .hint-btn {
-    font-size: 0.8rem;
-    padding: 8px 15px;
-    margin-bottom: 10px;
+  .swipe-card {
+    font-size: 1.2rem;
+  }
+  .slots-dock {
+    height: 80px;
+    gap: 8px;
+  }
+  .slot {
+    width: 45px;
+    height: 45px;
   }
   .win-btn {
     font-size: 0.9rem;
@@ -391,4 +398,115 @@ header p {
 .restart-btn:hover {
   transform: scale(1.05);
   background: var(--kkr-gold-bright);
+}
+
+/* Tinder UI Replacements */
+.deck-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 250px;
+  height: 180px;
+  perspective: 1000px;
+  z-index: 50;
+  pointer-events: none;
+}
+.deck-container:not(.hidden) {
+  pointer-events: auto; /* Enable touch drag only when active */
+}
+
+.swipe-card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(30, 17, 51, 0.95);
+  border: 4px solid var(--kkr-gold);
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--text-light);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(179, 161, 35, 0.3);
+  cursor: grab;
+  user-select: none;
+  touch-action: none; /* Crucial for overriding browser scrolling on swipe */
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  transform-origin: 50% 150%;
+}
+.swipe-card.dragging {
+  transition: none; /* Instant 1:1 finger tracking */
+  cursor: grabbing;
+}
+.swipe-card.golden-card {
+  animation: pulseGold 1s infinite;
+  border-color: var(--kkr-gold-bright);
+}
+
+.slots-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 90px;
+  background: rgba(0, 0, 0, 0.8);
+  border-top: 2px solid var(--kkr-gold);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  z-index: 100;
+  padding: 10px;
+  backdrop-filter: blur(10px);
+}
+.slot {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: 2px dashed var(--kkr-gold);
+  background: rgba(30, 17, 51, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+.slot.filled {
+  border: 2px solid var(--kkr-gold-bright);
+  background: var(--kkr-purple);
+  box-shadow: 0 0 15px var(--kkr-gold);
+  font-size: 0.6rem;
+  padding: 5px;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+.slot.filled:hover {
+  transform: scale(1.1);
+  background: #e52d27;
+  border-color: #fff;
+}
+.slot.filled::after {
+  content: 'x';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #e52d27;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  line-height: 17px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.slot.filled:hover::after {
+  opacity: 1;
 }
