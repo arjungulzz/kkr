@@ -2,356 +2,218 @@ import './style.css'
 import confetti from 'canvas-confetti';
 
 let winProbability = 0;
-let clickCount = 0;
-const MAX_CLICKS = 5;
 
 const trackerFill = document.getElementById('tracker-fill');
 const probabilityText = document.getElementById('probability-text');
-const winBtn = document.getElementById('win-btn');
 const winModal = document.getElementById('win-modal');
 const restartBtn = document.getElementById('restart-btn');
+const bonusModal = document.getElementById('bonus-modal');
+const unlockBonusBtn = document.getElementById('unlock-bonus-btn');
+const failModal = document.getElementById('fail-modal');
+const failMessage = document.getElementById('fail-message');
+const retryBtn = document.getElementById('retry-btn');
 
-const spawnBtn = document.getElementById('spawn-actions-btn');
-const hintBtn = document.getElementById('hint-btn');
-const deckContainer = document.getElementById('deck-container');
-const slotsDock = document.getElementById('slots-dock');
-const slots = document.querySelectorAll('.slot');
+const startQuizBtn = document.getElementById('start-quiz-btn');
+const nextBtn = document.getElementById('next-btn');
+const quizContainer = document.getElementById('quiz-container');
 
-// State flags
-let isEscaping = true;
-let hasJumped = false;
-let chipsShown = false;
-let cardDeck = [];
-let equippedSlots = [null, null, null, null, null];
-let decoyVals = [0, 0, 0, 0, 0];
+// Engine State
+let correctAnswersCount = 0;
+let decoySum = 0;
+let currentQuestionIndex = 0;
+let isAnswered = false; // block multiple clicks per question
 
-const rightPathChips = [
-  "Sack Coach", "Promote Narine", "Use data analytics", "Sign a spinner", "Focus on fielding"
+const questions = [
+  {
+    title: "What is the most critical management decision left to make?",
+    options: ["Sack Venky mama", "Sack CSK agent", "Change the support staff", "Change the coach"],
+    correctText: "Sack CSK agent"
+  },
+  {
+    title: "Which tactical player move is absolutely essential?",
+    options: ["Drop Varun Chakravarthy", "Drop Vaibhav Arora", "Drop Cameron Green", "Drop Ajinkya Rahane"],
+    correctText: "Drop Ajinkya Rahane"
+  },
+  {
+    title: "What should be the regular opening combination?",
+    options: ["Finn Allen & Sunil Narine", "Finn Allen & Ajinkya Rahane", "Finn Allen & Angkrish Raghuvanshi", "Ajinkya Rahane & Sunil Narine"],
+    correctText: "Finn Allen & Sunil Narine"
+  },
+  {
+    title: "Who should be the regular number 3?",
+    options: ["Ajinkya Rahane", "Angkrish Raghuvanshi", "Cameron Green", "Rinku Singh"],
+    correctText: "Angkrish Raghuvanshi"
+  },
+  {
+    title: "What miscallaneous off-the-field action can motivate the team?",
+    options: ["Playing Golf", "Shooting more advertisements", "An SRK speech before matches", "Lower ticket prices for home games"],
+    correctText: "An SRK speech before matches"
+  }
 ];
 
-const decoyChips = [
-  "Sack Rahane", "Sack Venky Mama", "Sack CSK Agent", "Change Home Ground",
-  "Kidnap Sujan Mukerjee", "Sell the team", "SRK Speech in Dressing Room", "Practice Hard",
-  "Make Rinku as Captain", "Perform Puja", "Play Rovman Powell", "Play Prathirana",
-  "Narine & Allen to Open", "Seifert & Allen to Open", "Sack Rinku, Ramandeep", "Make Angkrish as Captain",
-  "Drop Varun", "Play Tejasvi", "Bring Back Russel", "",
-  "Sell entire squad", "Make memes", "Change team name", "Blame owners", "Hire new scout"
-];
+// Ensure 6th Bonus Question
+const bonusQuestion = {
+  title: "BONUS UNLOCKED: To guarantee the Cup, what is the ultimate masterstroke?",
+  options: ["Change the team logo", "Bring Back Gautam Gambhir", "Change the home ground", "Change the team name"],
+  correctText: "Bring Back Gautam Gambhir"
+};
 
-const goldenChipText = "Bring Back GG";
+startQuizBtn.addEventListener('click', () => {
+  startQuizBtn.classList.add('hidden'); // Hide totally
+  startQuizBtn.style.display = 'none';
+  quizContainer.classList.remove('hidden');
 
-// Initialize
-winBtn.removeAttribute('disabled');
-winBtn.classList.add('escaping');
-spawnBtn.classList.add('hidden-initial');
+  // Auto-remove mobile class because we no longer need the space constraints!
+  document.querySelector('.app-container').classList.remove('playing-mobile');
 
-function positionWinBtnOverSpawnBtn() {
-  const spawnRect = spawnBtn.getBoundingClientRect();
-  const winRect = winBtn.getBoundingClientRect();
-  winBtn.style.left = `${spawnRect.left + (spawnRect.width/2) - (winRect.width/2)}px`;
-  winBtn.style.top = `${spawnRect.top + (spawnRect.height/2) - (winRect.height/2)}px`;
-}
+  loadQuestion(0);
+});
 
 function updateTrackerForSelection(displayProb) {
   let boundedProb = displayProb;
   if (boundedProb < 0) boundedProb = 0;
-  if (boundedProb > 99 && isEscaping) boundedProb = 99; // cap naturally below 100
-  if (boundedProb >= 100 && !isEscaping) boundedProb = 100; // actual win
+
+  // Strict Cap on normal questions, but permit exactly 90 if achieving the perfect sweep securely.
+  if (currentQuestionIndex < 5 && boundedProb > 89) {
+    if (currentQuestionIndex === 4 && correctAnswersCount === 5) {
+      boundedProb = 90;
+    } else {
+      boundedProb = 89;
+    }
+  }
+
+  if (currentQuestionIndex === 5 && correctAnswersCount === 5 && boundedProb !== 100) boundedProb = 90;
+  if (boundedProb >= 100) boundedProb = 100;
 
   trackerFill.style.width = `${boundedProb}%`;
   probabilityText.innerText = `${boundedProb}%`;
+}
 
-  // Reveal hint ONLY if hit 90+ while 5 items are fully selected
-  if (boundedProb >= 90 && isEscaping && clickCount === MAX_CLICKS) {
-    hintBtn.classList.remove('hidden');
+
+function loadQuestion(index) {
+  isAnswered = false;
+  nextBtn.classList.add('hidden');
+  document.getElementById('quiz-feedback').innerText = '';
+
+  let qData;
+  if (index < 5) {
+    qData = questions[index];
+    document.getElementById('q-counter').innerText = `Q: ${index + 1}/5`;
   } else {
-    hintBtn.classList.add('hidden');
-    // Also re-hide golden chip if user unselected something after taking hint
-    if (goldenChipElement && goldenChipElement.style.pointerEvents === 'auto') {
-      goldenChipElement.style.opacity = '0';
-      goldenChipElement.style.pointerEvents = 'none';
-      goldenChipElement.classList.remove('highlight');
-    }
+    qData = bonusQuestion;
+    document.getElementById('q-counter').innerText = `👑 BONUS STAGE 👑`;
+    document.getElementById('q-counter').style.color = 'var(--kkr-gold-bright)';
   }
 
-  if (boundedProb >= 100 && !isEscaping) {
-    const allChips = document.querySelectorAll('.chip');
-    allChips.forEach(c => {
-      c.classList.add('selected'); // Just to stop interactions visually
-      c.style.pointerEvents = 'none';
+  document.getElementById('question-text').innerText = qData.title;
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+
+  [...qData.options].sort(() => Math.random() - 0.5).forEach(optText => {
+    const btn = document.createElement('button');
+    btn.classList.add('option-btn');
+    btn.innerText = optText;
+
+    btn.addEventListener('click', () => {
+      if (isAnswered) return;
+      isAnswered = true;
+      btn.classList.add('selected');
+      btn.classList.add('correct'); // visually color every choice as green uniformly
+
+      // Lock everything visually
+      Array.from(grid.children).forEach(b => b.setAttribute('disabled', 'true'));
+
+      if (optText === qData.correctText) {
+        if (index < 5) {
+          correctAnswersCount++;
+        } else {
+          // BONUS SUCCESS
+          updateTrackerForSelection(100);
+          setTimeout(() => {
+            triggerConfetti();
+            winModal.classList.remove('hidden');
+          }, 800);
+          return; // DO not show next btn
+        }
+      } else {
+        if (index < 5) {
+          // Random negative penalty math
+          const fluct = Math.floor(Math.random() * 26) - 5;
+          decoySum += fluct;
+        } else {
+          // Failed the bonus
+          document.getElementById('quiz-feedback').className = 'quiz-feedback feedback-wrong';
+          document.getElementById('quiz-feedback').innerText = `You missed the masterstroke... Game Over!`;
+        }
+      }
+
+      // Calculate math organically immediately after grading
+      winProbability = (correctAnswersCount * 18) + decoySum;
+      updateTrackerForSelection(winProbability);
+
+      // Next Question Routing seamlessly
+      if (index === 4) { // User just finished Q5 securely
+        if (correctAnswersCount === 5) { // Perfect sweep
+          updateTrackerForSelection(90);
+          nextBtn.classList.add('hidden'); // Hide the standard button
+          setTimeout(() => {
+            bonusModal.classList.remove('hidden');
+          }, 500);
+        } else { // Bad sweep
+          nextBtn.classList.add('hidden'); // Hide standard button
+          setTimeout(() => {
+            failMessage.innerText = `Chances of winning are ${winProbability}%. Try again`;
+            failModal.classList.remove('hidden');
+          }, 500);
+        }
+      } else if (index < 4) {
+        nextBtn.innerText = "Next Question";
+        nextBtn.classList.remove('hidden');
+      } else if (index === 5 && optText !== qData.correctText) {
+        // Failed bonus completely!
+        nextBtn.innerText = "Restart Quiz";
+        nextBtn.classList.remove('hidden');
+      }
     });
-    hintBtn.classList.add('hidden');
-  }
+
+    grid.appendChild(btn);
+  });
 }
 
-function moveButton() {
-  if (!isEscaping) return;
-  
-  if (!hasJumped) {
-    hasJumped = true;
-    spawnBtn.classList.remove('hidden-initial');
-    spawnBtn.classList.add('glow-pulse');
-  }
-
-  const btnRect = winBtn.getBoundingClientRect();
-  let targetX, targetY;
-
-  if (!chipsShown) {
-    const maxX = window.innerWidth - btnRect.width - 20;
-    const maxY = window.innerHeight - btnRect.height - 20;
-    targetX = Math.max(10, Math.floor(Math.random() * maxX));
-    targetY = Math.max(10, Math.floor(Math.random() * maxY));
-  } else {
-    // Escaping bounded to strict top/bottom channels directly above/below the central box
-    const containerRect = document.querySelector('.app-container').getBoundingClientRect();
-
-    // Conditionally check if mobile screen
-    if (window.innerWidth <= 768) {
-      // Mobile escape: Jump exclusively WITHIN the central box because outer areas are saturated by the tight matrix
-      targetX = containerRect.left + 5 + Math.random() * Math.max(0, containerRect.width - btnRect.width - 10);
-      targetY = containerRect.top + 5 + Math.random() * Math.max(0, containerRect.height - btnRect.height - 10);
-    } else {
-      // Constrain X strictly to the bounds of the central block
-      const minX = containerRect.left;
-      const maxX = containerRect.right - btnRect.width;
-      targetX = minX + Math.floor(Math.random() * Math.max(0, maxX - minX));
-  
-      const spaceAbove = containerRect.top;
-      const spaceBelow = window.innerHeight - containerRect.bottom;
-  
-      let goAbove = Math.random() > 0.5;
-      if (spaceAbove < btnRect.height + 20) goAbove = false;
-      if (spaceBelow < btnRect.height + 80) goAbove = true;
-  
-      if (goAbove) {
-        targetY = Math.max(10, Math.floor(Math.random() * Math.max(0, containerRect.top - btnRect.height - 10)));
-      } else {
-        // Offset by 80px to safely clear the hidden golden chip which rendered at +15
-        targetY = containerRect.bottom + 80 + Math.floor(Math.random() * Math.max(0, window.innerHeight - containerRect.bottom - 80 - btnRect.height - 20));
-      }
-    }
-  }
-
-  winBtn.style.left = `${targetX}px`;
-  winBtn.style.top = `${targetY}px`;
-}
-
-winBtn.addEventListener('mouseover', () => {
-  if (isEscaping && hasJumped) {
-    moveButton();
-  }
+unlockBonusBtn.addEventListener('click', () => {
+  bonusModal.classList.add('hidden');
+  currentQuestionIndex++;
+  loadQuestion(currentQuestionIndex);
 });
 
-winBtn.addEventListener('touchstart', (e) => {
-  if (isEscaping) {
-    e.preventDefault(); // Prevents ghost clicks
-    moveButton(); // Immediately launch dodge sequence on tap
-  }
+retryBtn.addEventListener('click', () => {
+  failModal.classList.add('hidden');
+  restartQuiz();
 });
 
-winBtn.addEventListener('click', () => {
-  if (isEscaping) {
-    // If it's the very first interaction, click triggers the first movement
-    moveButton();
+nextBtn.addEventListener('click', () => {
+  // Determine dynamic behaviour cleanly
+  if (nextBtn.innerText === "Restart Quiz") {
+    restartQuiz();
     return;
   }
-  winModal.classList.remove('hidden');
-  triggerConfetti();
+
+  currentQuestionIndex++;
+  loadQuestion(currentQuestionIndex);
 });
 
-spawnBtn.addEventListener('click', () => {
-  spawnBtn.innerText = `Select best options (0/${MAX_CLICKS})`;
-  spawnBtn.setAttribute('disabled', 'true');
-  spawnBtn.classList.remove('glow-pulse');
-  chipsShown = true;
+function restartQuiz() {
+  winProbability = 0;
+  correctAnswersCount = 0;
+  currentQuestionIndex = 0;
+  decoySum = 0;
 
-  const allTexts = [...rightPathChips, ...decoyChips];
-  allTexts.sort(() => Math.random() - 0.5);
+  updateTrackerForSelection(0);
+  document.getElementById('q-counter').style.color = 'var(--kkr-gold)';
 
-  const isMobile = window.innerWidth <= 768;
-  const appContainer = document.querySelector('.app-container');
-  if (isMobile) {
-    appContainer.classList.add('playing-mobile');
-  }
-
-  // Engage Tinder Framework Views
-  deckContainer.classList.remove('hidden');
-  slotsDock.classList.remove('hidden');
-
-  cardDeck = [...rightPathChips, ...decoyChips];
-  cardDeck.sort(() => Math.random() - 0.5);
-
-  drawNextCard();
-});
-
-function calculateProbability() {
-  let correctHits = 0;
-  let decoySumTotal = 0;
-  let totalEquipped = 0;
-  
-  equippedSlots.forEach((text, i) => {
-    if(text) {
-      totalEquipped++;
-      if (rightPathChips.includes(text)) {
-        correctHits++;
-      } else {
-        decoySumTotal += decoyVals[i];
-      }
-    }
-  });
-
-  winProbability = (correctHits * 18) + decoySumTotal;
-  if (winProbability < 0) winProbability = 0;
-  
-  if (totalEquipped < MAX_CLICKS && winProbability > 89) {
-    winProbability = 89;
-  } else if (totalEquipped === MAX_CLICKS && correctHits === 5) {
-      winProbability = 90;
-  } else if (totalEquipped === MAX_CLICKS) {
-      winProbability = Math.min(89, winProbability);
-  }
-
-  updateTrackerForSelection(winProbability);
-  clickCount = totalEquipped;
-  
-  if (totalEquipped === MAX_CLICKS && winProbability < 90) {
-    spawnBtn.innerText = "Deck locked. Eject a slot to draw more.";
-  } else if (totalEquipped === MAX_CLICKS) {
-    spawnBtn.innerText = "Puzzle solved! Take the hint if needed.";
-  } else {
-    spawnBtn.innerText = `Select best options (${clickCount}/${MAX_CLICKS})`;
-  }
+  loadQuestion(0);
 }
-
-function ejectSlot(index) {
-  const text = equippedSlots[index];
-  if (!text) return;
-  
-  // Revert Slot logic
-  equippedSlots[index] = null;
-  decoyVals[index] = 0;
-  slots[index].innerText = '';
-  slots[index].classList.remove('filled');
-  
-  // Only push back into deck if we don't already have it (safety mechanic)
-  if(!cardDeck.includes(text)) {
-      cardDeck.push(text);
-      cardDeck.sort(() => Math.random() - 0.5);
-  }
-  
-  calculateProbability();
-  
-  // If the deck layout was empty because slots were full, immediately pop the next card!
-  if(deckContainer.children.length === 0) {
-      drawNextCard();
-  }
-}
-
-slots.forEach((slot, idx) => {
-  slot.addEventListener('click', () => {
-    ejectSlot(idx);
-  });
-});
-
-function drawNextCard() {
-  deckContainer.innerHTML = '';
-  if (cardDeck.length === 0) return;
-  if (clickCount >= MAX_CLICKS) return; 
-  
-  const text = cardDeck.shift(); // Pull from the top
-  const card = document.createElement('div');
-  card.classList.add('swipe-card');
-  card.innerText = text;
-  
-  if (text === goldenChipText) {
-    card.classList.add('golden-card');
-  }
-  
-  deckContainer.appendChild(card);
-  
-  let isDragging = false;
-  let startX = 0;
-  let currentX = 0;
-  
-  // Native absolute pointer tracking securely merges Mouse/Touch
-  card.addEventListener('pointerdown', (e) => {
-    isDragging = true;
-    startX = e.clientX;
-    card.classList.add('dragging');
-    card.setPointerCapture(e.pointerId);
-  });
-  
-  card.addEventListener('pointermove', (e) => {
-    if (!isDragging) return;
-    currentX = e.clientX - startX;
-    let rotate = currentX * 0.05; 
-    card.style.transform = `translate(${currentX}px, 0) rotate(${rotate}deg)`;
-  });
-  
-  card.addEventListener('pointerup', (e) => {
-    if (!isDragging) return;
-    isDragging = false;
-    card.classList.remove('dragging');
-    card.releasePointerCapture(e.pointerId);
-    
-    // Evaluate physics vectors
-    if (currentX > 80) { // Equip Threshold
-      card.style.opacity = '0'; // instantly dissolve visually
-      equipCard(text);
-    } else if (currentX < -80) { // Discard Threshold
-      card.style.opacity = '0';
-      discardCard(text);
-    } else { // Snap logic
-      card.style.transform = `translate(0px, 0) rotate(0deg)`;
-    }
-  });
-  
-  card.addEventListener('pointercancel', () => {
-      isDragging = false;
-      card.classList.remove('dragging');
-      card.style.transform = `translate(0px, 0) rotate(0deg)`;
-  });
-}
-
-function equipCard(text) {
-  let slotIdx = equippedSlots.indexOf(null);
-  if (slotIdx === -1) {
-    discardCard(text); // Safety belt
-    return;
-  }
-  
-  if (text === goldenChipText) {
-     isEscaping = false;
-     updateTrackerForSelection(100);
-     deckContainer.innerHTML = ''; // wipe clear
-     return;
-  }
-  
-  equippedSlots[slotIdx] = text;
-  if (!rightPathChips.includes(text)) {
-    decoyVals[slotIdx] = Math.floor(Math.random() * 26) - 5;
-  }
-  
-  slots[slotIdx].innerText = text;
-  slots[slotIdx].classList.add('filled');
-  
-  calculateProbability();
-  setTimeout(drawNextCard, 100);
-}
-
-function discardCard(text) {
-   cardDeck.push(text);
-   setTimeout(drawNextCard, 100);
-}
-
-// Map the Hint precisely to the deck injection physics
-hintBtn.addEventListener('click', () => {
-  if (isEscaping) {
-    hintBtn.innerText = "Check your deck!!";
-    cardDeck.unshift(goldenChipText); // Inject directly into front slot!
-    if(deckContainer.children.length === 0) drawNextCard();
-  }
-});
 
 let confettiAnimationId = null;
 let stopConfetti = false;
@@ -374,50 +236,9 @@ function triggerConfetti() {
 }
 
 restartBtn.addEventListener('click', () => {
-  cardDeck = [];
-  equippedSlots = [null, null, null, null, null];
-  decoyVals = [0, 0, 0, 0, 0];
-  
-  slots.forEach((s) => {
-      s.innerText = '';
-      s.classList.remove('filled');
-  });
-
-  document.querySelector('.app-container').classList.remove('playing-mobile');
-
+  winModal.classList.add('hidden');
   stopConfetti = true;
   if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
   confetti.reset();
-
-  updateTrackerForSelection(0);
-
-  deckContainer.innerHTML = '';
-  deckContainer.classList.add('hidden');
-  slotsDock.classList.add('hidden');
-  spawnBtn.removeAttribute('disabled');
-  spawnBtn.innerText = "Not able to win it? Take action.";
-  spawnBtn.classList.add('hidden-initial');
-  spawnBtn.classList.remove('glow-pulse');
-  
-  hintBtn.innerText = "Take Hint";
-  hintBtn.classList.add('hidden');
-
-  winBtn.classList.add('escaping');
-  winBtn.style.background = 'linear-gradient(45deg, #e52d27, #b31217)';
-  winBtn.style.color = 'white';
-  winBtn.innerText = '🏆 WIN THE IPL 2026';
-
-  winModal.classList.add('hidden');
-  
-  setTimeout(positionWinBtnOverSpawnBtn, 50);
-});
-
-// Initial Anchor Sequence
-setTimeout(positionWinBtnOverSpawnBtn, 200);
-
-// Window resizes dynamically break layout. Readjust anchor naturally prior to first launch.
-window.addEventListener('resize', () => {
-   if (!hasJumped) {
-       positionWinBtnOverSpawnBtn();
-   }
+  restartQuiz();
 });

@@ -28,25 +28,40 @@
       </section>
 
       <div class="actions-control">
-        <button id="spawn-actions-btn" class="spawn-btn">Not able to win it? Take action.</button>
-        <button id="hint-btn" class="hint-btn hidden">Take Hint</button>
+        <button id="start-quiz-btn" class="spawn-btn">Start Quiz</button>
       </div>
 
-      <button id="win-btn" class="win-btn" disabled>🏆 WIN THE IPL 2026</button>
+      <!-- Quiz Engine Container -->
+      <div id="quiz-container" class="quiz-container hidden">
+        <div class="quiz-header">
+            <span id="q-counter">Q: 1/5</span>
+        </div>
+        <h2 id="question-text">Question goes here?</h2>
+        <div id="options-grid" class="options-grid"></div>
+        <div id="quiz-feedback" class="quiz-feedback"></div>
+        <button id="next-btn" class="hint-btn hidden">Next</button>
+      </div>
     </div>
 
-    <!-- Swipe Mechanics Deck -->
-    <div id="deck-container" class="deck-container hidden"></div>
+    <!-- Bonus Question Transition Modal (Hidden by default) -->
+    <div id="bonus-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>90% Win Probability!</h2>
+        <p>Your decisions are on point still the chances of winning 90%.</p>
+        <p>One last question remains to guarantee the win.</p>
+        <button id="unlock-bonus-btn" class="restart-btn">Unlock Bonus Question</button>
+      </div>
+    </div>
     
-    <!-- Equipped Slots Dock -->
-    <div id="slots-dock" class="slots-dock hidden">
-      <div class="slot empty"></div>
-      <div class="slot empty"></div>
-      <div class="slot empty"></div>
-      <div class="slot empty"></div>
-      <div class="slot empty"></div>
+    <!-- Failure Modal (Hidden by default) -->
+    <div id="fail-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Not Quite Perfect!</h2>
+        <p id="fail-message">Chances of winning are 0%. Try again</p>
+        <button id="retry-btn" class="restart-btn">Try Again</button>
+      </div>
     </div>
-
+    
     <!-- Win Modal (Hidden by default) -->
     <div id="win-modal" class="modal hidden">
       <div class="modal-content">

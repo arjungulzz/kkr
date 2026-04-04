@@ -306,33 +306,92 @@ header p {
   100% { box-shadow: 0 0 0 0 rgba(235, 213, 50, 0); border-color: var(--kkr-gold); }
 }
 
-.win-btn {
-  /* This is the runaway target button */
-  background: linear-gradient(45deg, #e52d27, #b31217); /* red distinct color initially to pop out */
+/* Quiz Engine Styling */
+.quiz-container {
+  margin-top: 20px;
+  background: rgba(30, 17, 51, 0.95);
+  border: 2px solid var(--kkr-gold);
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  transition: opacity 0.3s ease;
+}
+
+.quiz-header {
+  font-size: 1.1rem;
+  color: var(--kkr-gold);
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+#question-text {
+  font-size: 1.4rem;
+  margin-bottom: 20px;
   color: white;
-  border: none;
-  padding: 20px 40px;
-  font-size: 1.5rem;
-  font-weight: 800;
-  border-radius: 30px;
+  line-height: 1.3;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.option-btn {
+  background: linear-gradient(135deg, rgba(58, 34, 93, 0.9), rgba(30, 17, 51, 0.9));
+  border: 1px solid var(--kkr-gold);
+  color: var(--text-light);
+  padding: 15px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 8px 15px rgba(229, 45, 39, 0.4);
-  transition: left 0.4s cubic-bezier(0.25, 1, 0.5, 1), top 0.4s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, transform 0.2s ease;
-  position: relative; /* Before it escapes */
+  transition: all 0.2s ease;
 }
 
-/* When the probability is low it will be absolute so it can run out of the box */
-.win-btn.escaping {
-  position: fixed;
-  z-index: 100;
+.option-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: var(--kkr-purple);
+  box-shadow: 0 0 10px rgba(179, 161, 35, 0.5);
 }
 
-.win-btn:disabled {
-  background: #555;
-  color: #888;
-  box-shadow: none;
-  cursor: grab;
+.option-btn.selected {
+  border-color: #fff;
 }
+
+.option-btn.correct {
+  background: #2ea043;
+  color: white;
+  border-color: #fff;
+}
+
+.option-btn.wrong {
+  background: #e52d27;
+  color: white;
+  border-color: #fff;
+}
+
+.option-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.quiz-feedback {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 10px;
+  height: 24px;
+}
+.feedback-correct { color: #2ea043; }
+.feedback-wrong { color: #e52d27; }
 
 /* Modal Styling */
 .modal {
@@ -351,6 +410,10 @@ header p {
 .modal.hidden {
   opacity: 0;
   visibility: hidden;
+}
+
+.hidden {
+  display: none !important;
 }
 
 .modal-content {
@@ -400,113 +463,4 @@ header p {
   background: var(--kkr-gold-bright);
 }
 
-/* Tinder UI Replacements */
-.deck-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 250px;
-  height: 180px;
-  perspective: 1000px;
-  z-index: 50;
-  pointer-events: none;
-}
-.deck-container:not(.hidden) {
-  pointer-events: auto; /* Enable touch drag only when active */
-}
-
-.swipe-card {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgba(30, 17, 51, 0.95);
-  border: 4px solid var(--kkr-gold);
-  border-radius: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: var(--text-light);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(179, 161, 35, 0.3);
-  cursor: grab;
-  user-select: none;
-  touch-action: none; /* Crucial for overriding browser scrolling on swipe */
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-  transform-origin: 50% 150%;
-}
-.swipe-card.dragging {
-  transition: none; /* Instant 1:1 finger tracking */
-  cursor: grabbing;
-}
-.swipe-card.golden-card {
-  animation: pulseGold 1s infinite;
-  border-color: var(--kkr-gold-bright);
-}
-
-.slots-dock {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 90px;
-  background: rgba(0, 0, 0, 0.8);
-  border-top: 2px solid var(--kkr-gold);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  z-index: 100;
-  padding: 10px;
-  backdrop-filter: blur(10px);
-}
-.slot {
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  border: 2px dashed var(--kkr-gold);
-  background: rgba(30, 17, 51, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s ease;
-}
-.slot.filled {
-  border: 2px solid var(--kkr-gold-bright);
-  background: var(--kkr-purple);
-  box-shadow: 0 0 15px var(--kkr-gold);
-  font-size: 0.6rem;
-  padding: 5px;
-  text-align: center;
-  cursor: pointer;
-  overflow: hidden;
-  line-height: 1.1;
-  word-wrap: break-word;
-}
-.slot.filled:hover {
-  transform: scale(1.1);
-  background: #e52d27;
-  border-color: #fff;
-}
-.slot.filled::after {
-  content: 'x';
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #e52d27;
-  color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
-  line-height: 17px;
-  text-align: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.slot.filled:hover::after {
-  opacity: 1;
-}
+/* End of Styles */
