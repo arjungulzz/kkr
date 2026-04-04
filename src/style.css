@@ -18,7 +18,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -241,10 +241,13 @@ header p {
   }
   header h1 {
     font-size: 1.2rem;
+    margin-bottom: 5px;
+  }
+  header p {
     margin-bottom: 10px;
   }
   .tracker-section {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
   }
   .tracker-section h2 {
     font-size: 1rem;
@@ -282,6 +285,22 @@ header p {
   }
   .modal-content p {
     font-size: 1rem;
+  }
+  #question-text {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  .option-btn {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+  .quiz-container {
+    padding: 15px;
+    margin-top: 10px;
+  }
+  .options-grid {
+    gap: 10px;
+    margin-bottom: 15px;
   }
 }
 
@@ -339,9 +358,9 @@ header p {
   margin-bottom: 20px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 320px) {
   .options-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Only force single column on extremely narrow screens if absolutely necessary */
   }
 }
 
