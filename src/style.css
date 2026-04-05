@@ -25,7 +25,7 @@ body {
 }
 
 .overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -41,8 +41,8 @@ body {
   background: rgba(30, 17, 51, 0.85); /* Dark purple glassmorphism */
   border: 2px solid var(--kkr-gold);
   border-radius: 20px;
-  padding: 25px;
-  max-width: 450px;
+  padding: 15px;
+  max-width: 400px;
   width: 90%;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(179, 161, 35, 0.2);
@@ -51,7 +51,7 @@ body {
 header h1 {
   font-weight: 800;
   color: var(--kkr-gold-bright);
-  font-size: 2.5rem;
+  font-size: 1.7rem;
   margin: 0 0 10px 0;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -60,13 +60,13 @@ header h1 {
 
 header p {
   color: #ddd;
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   margin-top: 0;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .tracker-section {
-  margin-bottom: 40px;
+  margin-bottom: 25px;
 }
 
 .tracker-header {
@@ -75,13 +75,13 @@ header p {
   align-items: flex-end;
   margin-bottom: 10px;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: var(--kkr-gold);
 }
 
 .tracker-bar {
   width: 100%;
-  height: 25px;
+  height: 20px;
   background: rgba(0,0,0,0.5);
   border-radius: 20px;
   overflow: hidden;
@@ -112,11 +112,11 @@ header p {
   background: var(--kkr-purple-dark);
   color: white;
   border: 2px solid var(--kkr-gold);
-  padding: 15px 30px;
+  padding: 10px 20px;
   border-radius: 10px;
   font-family: inherit;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.4s ease;
   box-shadow: 0 5px 15px rgba(0,0,0,0.4);
@@ -240,21 +240,22 @@ header p {
     margin-bottom: 8px;
   }
   header h1 {
-    font-size: 1.2rem;
-    margin-bottom: 5px;
+    font-size: 1rem;
+    margin-bottom: 4px;
   }
   header p {
-    margin-bottom: 10px;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
   }
   .tracker-section {
     margin-bottom: 5px;
   }
   .tracker-section h2 {
-    font-size: 1rem;
-    margin-bottom: 5px;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
   }
   .tracker-bar {
-    height: 18px;
+    height: 14px;
   }
   .deck-container {
     top: 55%;
@@ -287,16 +288,20 @@ header p {
     font-size: 1rem;
   }
   #question-text {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
+    font-size: 1rem;
+    margin-bottom: 8px;
   }
   .option-btn {
-    padding: 10px;
-    font-size: 0.9rem;
+    padding: 8px;
+    font-size: 0.8rem;
   }
   .quiz-container {
-    padding: 15px;
-    margin-top: 10px;
+    padding: 10px;
+    margin-top: 8px;
+  }
+  .quiz-header {
+    font-size: 0.8rem;
+    margin-bottom: 4px;
   }
   .options-grid {
     gap: 10px;
@@ -336,17 +341,16 @@ header p {
   box-shadow: 0 4px 15px rgba(0,0,0,0.5);
   transition: opacity 0.3s ease;
 }
-
 .quiz-header {
-  font-size: 1.1rem;
+  font-size: 0.8rem;
   color: var(--kkr-gold);
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   font-weight: bold;
 }
 
 #question-text {
-  font-size: 1.4rem;
-  margin-bottom: 20px;
+  font-size: 1.05rem;
+  margin-bottom: 12px;
   color: white;
   line-height: 1.3;
 }
@@ -354,8 +358,21 @@ header p {
 .options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+/* Upfront community stats context */
+.stats-header {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: var(--kkr-gold-bright);
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  opacity: 1;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
 }
 
 @media (max-width: 320px) {
@@ -365,15 +382,72 @@ header p {
 }
 
 .option-btn {
-  background: linear-gradient(135deg, rgba(58, 34, 93, 0.9), rgba(30, 17, 51, 0.9));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(58, 34, 93, 0.95), rgba(30, 17, 51, 0.95));
   border: 1px solid var(--kkr-gold);
   color: var(--text-light);
-  padding: 15px;
-  font-size: 1.1rem;
-  font-weight: bold;
+  padding: 15px 12px;
+  min-height: 55px;
+  font-size: 0.85rem;
+  font-weight: 600;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.option-btn .btn-text {
+  position: relative;
+  z-index: 2;
+}
+
+.percentage-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0%;
+  background: rgba(179, 161, 35, 0.15); /* Very subtle gold bar */
+  z-index: 1;
+  border-right: 1px solid rgba(179, 161, 35, 0.3);
+  transition: width 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.option-btn.selected .percentage-fill {
+  background: rgba(179, 161, 35, 0.35); /* Slightly darker gold when selected */
+}
+
+.percentage-label {
+  position: absolute;
+  right: 6px;
+  top: 5px;
+  font-size: 0.6rem;
+  color: var(--kkr-gold-bright);
+  font-weight: 900;
+  z-index: 3;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.5s ease 0.3s;
+}
+
+.option-btn.is-fav {
+  border-color: var(--kkr-gold-bright);
+  box-shadow: inset 0 0 10px rgba(179, 161, 35, 0.15);
+}
+
+.fav-icon {
+  font-size: 0.65rem;
+  margin-left: 4px;
+}
+
+.option-btn.show-stats .percentage-label {
+  opacity: 1;
 }
 
 .option-btn:hover:not(:disabled) {
@@ -404,7 +478,7 @@ header p {
 }
 
 .quiz-feedback {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
   margin-top: 10px;
   height: 24px;
@@ -480,6 +554,44 @@ header p {
 .restart-btn:hover {
   transform: scale(1.05);
   background: var(--kkr-gold-bright);
+}
+
+/* Global Counter (Bottom Area) */
+.global-counter {
+  margin-top: 25px;
+  padding-top: 15px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--kkr-gold);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  border-top: 1px solid rgba(179, 161, 35, 0.2);
+}
+
+.elite-stat {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-light);
+  opacity: 0.8;
+}
+
+.gold-text {
+  color: var(--kkr-gold-bright) !important;
+  font-weight: 800;
+}
+
+#quiz-count-display {
+  color: var(--kkr-gold-bright);
+}
+
+@media (max-width: 768px) {
+  .global-counter {
+    margin-top: 15px;
+    padding-top: 10px;
+  }
 }
 
 /* End of Styles */

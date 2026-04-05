@@ -12,6 +12,7 @@ const unlockBonusBtn = document.getElementById('unlock-bonus-btn');
 const failModal = document.getElementById('fail-modal');
 const failMessage = document.getElementById('fail-message');
 const retryBtn = document.getElementById('retry-btn');
+const quizCountDisplay = document.getElementById('quiz-count-display');
 
 const startQuizBtn = document.getElementById('start-quiz-btn');
 const nextBtn = document.getElementById('next-btn');
@@ -58,14 +59,129 @@ const bonusQuestion = {
   correctText: "Bring Back Gautam Gambhir"
 };
 
-startQuizBtn.addEventListener('click', () => {
+// Supabase Configuration
+const SUPABASE_URL = "https://qfmwxiwrzocwhzorsdtx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_CraTJvQ91f6NfsmRxrsU5Q_bSA5_psn";
+
+// Global cache for all option stats
+let globalStatsCache = {};
+
+// Atomic Increment via RPC
+async function supabaseRPC(fnName, params) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify(params)
+    });
+    return response.ok;
+  } catch (err) {
+    console.error(`Supabase RPC ${fnName} failed:`, err);
+    return false;
+  }
+}
+
+async function loadGlobalCount() {
+  try {
+    // 1. Try to load from localStorage first for instant display
+    const localSavedCount = localStorage.getItem('kkr_global_count');
+    const localSaved90 = localStorage.getItem('kkr_reached_90_count');
+    const localSavedWon = localStorage.getItem('kkr_cup_won_count');
+    
+    if (localSavedCount) quizCountDisplay.innerText = localSavedCount;
+
+    // 2. Fetch the latest from Supabase (All three stats in one query)
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/kkr_stats?id=in.(total_quizzes,reached_90,cup_won)&select=id,count`, {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const statsMap = data.reduce((acc, row) => ({...acc, [row.id]: row.count}), {});
+      
+      const total = statsMap['total_quizzes'] || 0;
+      const reached90 = statsMap['reached_90'] || 0;
+      const cupWon = statsMap['cup_won'] || 0;
+
+      const pct90 = total > 0 ? Math.round((reached90 / total) * 100) : 0;
+      const pctWon = total > 0 ? Math.round((cupWon / total) * 100) : 0;
+
+      quizCountDisplay.innerText = total;
+      
+      // Update local cache
+      localStorage.setItem('kkr_global_count', total);
+      localStorage.setItem('kkr_reached_90_count', reached90);
+      localStorage.setItem('kkr_cup_won_count', cupWon);
+      
+      // Update modal stats ONLY (keep landing page clean)
+      const bonusStat = document.getElementById('bonus-reach-stat');
+      if (bonusStat) bonusStat.innerText = `${pct90}%`;
+      const finalStat = document.getElementById('final-win-stat');
+      if (finalStat) finalStat.innerText = `${pctWon}%`;
+    }
+  } catch (err) {
+    console.error("Supabase loadGlobalCount failed:", err);
+  }
+}
+
+async function incrementGlobalCount() {
+  await supabaseRPC('increment_stat', { row_id: 'total_quizzes' });
+  loadGlobalCount();
+}
+
+/**
+ * NEW: Fetches ALL selection statistics for ALL options in a single request.
+ * Required for upfront rendering of community results.
+ */
+async function fetchAllStats() {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/kkr_stats?select=id,count`, {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      globalStatsCache = data.reduce((acc, row) => {
+        acc[row.id] = parseInt(row.count) || 0;
+        return acc;
+      }, {});
+    }
+  } catch (err) {
+    console.error("Supabase fetchAllStats failed:", err);
+  }
+}
+
+async function incrementOptionStat(qIdx, oIdx) {
+  const rowId = `q${qIdx}_o${oIdx}`;
+  // Fire and forget update to database
+  supabaseRPC('increment_stat', { row_id: rowId });
+}
+
+// Initial load
+loadGlobalCount();
+
+startQuizBtn.addEventListener('click', async () => {
   startQuizBtn.classList.add('hidden'); // Hide totally
   startQuizBtn.style.display = 'none';
   quizContainer.classList.remove('hidden');
 
-  // Auto-remove mobile class because we no longer need the space constraints!
+  // Auto-remove mobile class
   document.querySelector('.app-container').classList.remove('playing-mobile');
 
+  // Load everything upfront
+  document.getElementById('stats-header').classList.remove('hidden');
+  incrementGlobalCount();
+  await fetchAllStats(); // High performance single request
   loadQuestion(0);
 });
 
@@ -111,68 +227,111 @@ function loadQuestion(index) {
   grid.innerHTML = '';
 
   [...qData.options].sort(() => Math.random() - 0.5).forEach(optText => {
+    // Find the original index for this option to keep stats consistent despite shuffling
+    const originalOptIndex = qData.options.indexOf(optText);
+
     const btn = document.createElement('button');
     btn.classList.add('option-btn');
-    btn.innerText = optText;
+    
+    const textSpan = document.createElement('span');
+    textSpan.classList.add('btn-text');
+    textSpan.innerText = optText;
+    btn.appendChild(textSpan);
 
-    btn.addEventListener('click', () => {
+    const fillDiv = document.createElement('div');
+    fillDiv.classList.add('percentage-fill');
+    btn.appendChild(fillDiv);
+
+    const labelSpan = document.createElement('span');
+    labelSpan.classList.add('percentage-label');
+    
+    /** 
+     * NEW: Upfront Stats Display
+     * Calculate percentage from pre-fetched cache immediately
+     */
+    const counts = [0, 1, 2, 3].map(oIdx => globalStatsCache[`q${index}_o${oIdx}`] || 0);
+    const totalVotes = counts.reduce((a, b) => a + b, 0);
+    const myCount = globalStatsCache[`q${index}_o${originalOptIndex}`] || 0;
+    const percent = totalVotes > 0 ? Math.round((myCount / totalVotes) * 100) : 0;
+    
+    labelSpan.innerHTML = `<span>👤 ${percent}%</span>`;
+    
+    fillDiv.style.width = `${percent}%`;
+    
+    // Add show-stats class upfront to reveal labels/bars before click
+    btn.classList.add('show-stats');
+    
+    labelSpan.setAttribute('data-opt-idx', originalOptIndex);
+    btn.appendChild(labelSpan);
+
+    btn.addEventListener('click', async () => {
       if (isAnswered) return;
       isAnswered = true;
+      
+      // Instantly disable all options to lock the UI and prevent hover overrides
+      Array.from(grid.children).forEach(b => b.disabled = true);
+      
       btn.classList.add('selected');
       btn.classList.add('correct'); // visually color every choice as green uniformly
 
-      // Lock everything visually
-      Array.from(grid.children).forEach(b => b.setAttribute('disabled', 'true'));
+      // Selection Distribution Logic (SILENT DB UPDATE ONLY)
+      incrementOptionStat(index, originalOptIndex);
 
+      // 1. INSTANT UI FEEDBACK & TRACKER
       if (optText === qData.correctText) {
         if (index < 5) {
           correctAnswersCount++;
+          // Increment probability by 18% per correct answer (5 * 18 = 90%)
+          updateTrackerForSelection(correctAnswersCount * 18);
         } else {
-          // BONUS SUCCESS
+          // Bonus Question Win! (CUP WON)
+          supabaseRPC('increment_stat', { row_id: 'cup_won' });
+          
           updateTrackerForSelection(100);
           setTimeout(() => {
             triggerConfetti();
+            
+            // Re-fetch global counts to update the final percentage before showing the and modal
+            loadGlobalCount();
             winModal.classList.remove('hidden');
-          }, 800);
-          return; // DO not show next btn
+          }, 1000);
+          return; 
         }
       } else {
         if (index < 5) {
-          // Random negative penalty math
-          const fluct = Math.floor(Math.random() * 26) - 5;
-          decoySum += fluct;
+          // Deduct some probability for wrong answer
+          const currentProb = parseInt(probabilityText.innerText) || 0;
+          const penalty = Math.floor(Math.random() * 15) + 5;
+          updateTrackerForSelection(currentProb - penalty);
         } else {
           // Failed the bonus
           document.getElementById('quiz-feedback').className = 'quiz-feedback feedback-wrong';
           document.getElementById('quiz-feedback').innerText = `You missed the masterstroke... Game Over!`;
+          nextBtn.innerText = "Restart Quiz";
+          nextBtn.classList.remove('hidden');
+          return;
         }
       }
 
-      // Calculate math organically immediately after grading
-      winProbability = (correctAnswersCount * 18) + decoySum;
-      updateTrackerForSelection(winProbability);
-
       // Next Question Routing seamlessly
-      if (index === 4) { // User just finished Q5 securely
-        if (correctAnswersCount === 5) { // Perfect sweep
-          updateTrackerForSelection(90);
-          nextBtn.classList.add('hidden'); // Hide the standard button
-          setTimeout(() => {
+      if (index === 4) { // Finished Q5
+        setTimeout(() => {
+          if (correctAnswersCount === 5) {
+            // FIRE AND FORGET: Mark that this user joined the 90% club
+            supabaseRPC('increment_stat', { row_id: 'reached_90' });
+            
+            updateTrackerForSelection(90);
             bonusModal.classList.remove('hidden');
-          }, 500);
-        } else { // Bad sweep
-          nextBtn.classList.add('hidden'); // Hide standard button
-          setTimeout(() => {
-            failMessage.innerText = `Chances of winning are ${winProbability}%. Try again`;
+            
+            // Re-fetch global count to update the community stat in the modal
+            loadGlobalCount();
+          } else {
+            failMessage.innerText = `Chances of winning are ${probabilityText.innerText}. Try again`;
             failModal.classList.remove('hidden');
-          }, 500);
-        }
+          }
+        }, 800);
       } else if (index < 4) {
         nextBtn.innerText = "Next Question";
-        nextBtn.classList.remove('hidden');
-      } else if (index === 5 && optText !== qData.correctText) {
-        // Failed bonus completely!
-        nextBtn.innerText = "Restart Quiz";
         nextBtn.classList.remove('hidden');
       }
     });
@@ -203,7 +362,7 @@ nextBtn.addEventListener('click', () => {
   loadQuestion(currentQuestionIndex);
 });
 
-function restartQuiz() {
+async function restartQuiz() {
   winProbability = 0;
   correctAnswersCount = 0;
   currentQuestionIndex = 0;
@@ -212,6 +371,8 @@ function restartQuiz() {
   updateTrackerForSelection(0);
   document.getElementById('q-counter').style.color = 'var(--kkr-gold)';
 
+  document.getElementById('stats-header').classList.remove('hidden');
+  await fetchAllStats(); // Refresh community stats on restart
   loadQuestion(0);
 }
 

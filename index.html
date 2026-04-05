@@ -1,76 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KKR Cup Winner 2024</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <!-- Background overlay -->
-    <div class="overlay"></div>
 
-    <div class="app-container">
-      <header>
-        <h1>Ami KKR: Path to Glory</h1>
-        <p>Your team needs a drastic overhaul to win the cup!</p>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KKR Cup Winner 2024</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
 
-      <section class="tracker-section">
-        <div class="tracker-header">
-          <h2>Win Probability</h2>
-          <span id="probability-text">0%</span>
-        </div>
-        <div class="tracker-bar">
-          <div id="tracker-fill" class="tracker-fill"></div>
-        </div>
-      </section>
+<body>
+  <!-- Background overlay -->
+  <div class="overlay"></div>
 
-      <div class="actions-control">
-        <button id="start-quiz-btn" class="spawn-btn">Start Quiz</button>
+  <div class="app-container">
+    <header>
+      <h1>Ami KKR: Path to Glory</h1>
+      <p>Your team needs a drastic overhaul to win the cup!</p>
+    </header>
+
+    <section class="tracker-section">
+      <div class="tracker-header">
+        <h2>Win Probability</h2>
+        <span id="probability-text">0%</span>
       </div>
-
-      <!-- Quiz Engine Container -->
-      <div id="quiz-container" class="quiz-container hidden">
-        <div class="quiz-header">
-            <span id="q-counter">Q: 1/5</span>
-        </div>
-        <h2 id="question-text">Question goes here?</h2>
-        <div id="options-grid" class="options-grid"></div>
-        <div id="quiz-feedback" class="quiz-feedback"></div>
-        <button id="next-btn" class="hint-btn hidden">Next</button>
+      <div class="tracker-bar">
+        <div id="tracker-fill" class="tracker-fill"></div>
       </div>
+    </section>
+
+    <div class="actions-control">
+      <button id="start-quiz-btn" class="spawn-btn">Start Quiz</button>
     </div>
 
-    <!-- Bonus Question Transition Modal (Hidden by default) -->
-    <div id="bonus-modal" class="modal hidden">
-      <div class="modal-content">
-        <h2>90% Win Probability!</h2>
-        <p>Your decisions are on point still the chances of winning 90%.</p>
-        <p>One last question remains to guarantee the win.</p>
-        <button id="unlock-bonus-btn" class="restart-btn">Unlock Bonus Question</button>
+    <!-- Quiz Engine Container -->
+    <div id="quiz-container" class="quiz-container hidden">
+      <div class="quiz-header">
+        <span id="q-counter">Q: 1/5</span>
       </div>
-    </div>
-    
-    <!-- Failure Modal (Hidden by default) -->
-    <div id="fail-modal" class="modal hidden">
-      <div class="modal-content">
-        <h2>Not Quite Perfect!</h2>
-        <p id="fail-message">Chances of winning are 0%. Try again</p>
-        <button id="retry-btn" class="restart-btn">Try Again</button>
-      </div>
-    </div>
-    
-    <!-- Win Modal (Hidden by default) -->
-    <div id="win-modal" class="modal hidden">
-      <div class="modal-content">
-        <h2>🎉 KORBO LORBO JEETBO RE! 🎉</h2>
-        <p>WE WON THE CUP!</p>
-        <button id="restart-btn" class="restart-btn">Play Again</button>
-      </div>
+      <h2 id="question-text">Question goes here?</h2>
+      <div id="stats-header" class="stats-header hidden">Fans Pulse: Most picked options</div>
+      <div id="options-grid" class="options-grid"></div>
+      <div id="quiz-feedback" class="quiz-feedback"></div>
+      <button id="next-btn" class="hint-btn hidden">Next</button>
     </div>
 
-    <script type="module" src="/src/main.js"></script>
-  </body>
+    <div id="global-counter" class="global-counter">
+      <div>🏆 Overall Quizzes Taken: <span id="quiz-count-display">0</span></div>
+    </div>
+  </div>
+
+  <!-- Bonus Question Transition Modal (Hidden by default) -->
+  <div id="bonus-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>90% Win Probability!</h2>
+      <p>Your decisions are on point! You've joined the elite <span id="bonus-reach-stat" class="gold-text">...</span> of fans who reached this level!</p>
+      <p>One last question remains to guarantee the win.</p>
+      <button id="unlock-bonus-btn" class="restart-btn">Unlock Bonus Question</button>
+    </div>
+  </div>
+
+  <!-- Failure Modal (Hidden by default) -->
+  <div id="fail-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Not Quite Perfect!</h2>
+      <p id="fail-message">Chances of winning are 0%. Try again</p>
+      <button id="retry-btn" class="restart-btn">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Win Modal (Hidden by default) -->
+  <div id="win-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>🏆 CHAMPIONS 2024! 🏆</h2>
+      <p>Congratulations! You've brought the trophy home! You are one of the elite <span id="final-win-stat" class="gold-text">...</span> of KKR masters who won it all!</p>
+      <button id="restart-btn" class="restart-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>
